@@ -1,4 +1,8 @@
-require 'test_helper'
+require 'test/test_helper'
+
+# https://github.com/svenfuchs/i18n/wiki/Fallbacks
+require "i18n/backend/fallbacks"
+I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
 
 class EasyGlobalizeAccessorsTest < ActiveSupport::TestCase
  
@@ -15,6 +19,8 @@ class EasyGlobalizeAccessorsTest < ActiveSupport::TestCase
 
   setup do
     assert_equal :en, I18n.locale
+    I18n.fallbacks[:en] = [:en]
+    I18n.fallbacks[:pl] = [:pl]
   end
 
   test "read and write on new object" do
@@ -82,5 +88,21 @@ class EasyGlobalizeAccessorsTest < ActiveSupport::TestCase
     assert_equal "Name en",  u.name
     assert_equal "Name pl",  u.name_pl
   end
-  
+
+  test "using fallbacks" do
+    u = Unit.new(:name_pl => "Name pl")
+
+    assert_nil u.name_en
+    assert_nil u.name_en_without_fallback
+    assert_equal "Name pl", u.name_pl
+    assert_equal "Name pl", u.name_pl_without_fallback
+
+    I18n.fallbacks[:en] = [:en, :pl]
+
+    assert_equal "Name pl", u.name_en
+    assert_nil u.name_en_without_fallback
+    assert_equal "Name pl", u.name_pl
+    assert_equal "Name pl", u.name_pl_without_fallback
+  end
+
 end
